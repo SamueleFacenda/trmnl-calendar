@@ -39,10 +39,14 @@ for ics_url in trmnl_ics_urls:
 
     # this will keep the calendar timezone
     for name, value in calendar.property_items(recursive=False):
+        if name.upper() == "CALSCALE":
+            continue
         merged_calendar.add(name, value)
 
     for component in calendar.walk('VEVENT'):
         merged_calendar.add_component(component)
+        
+merged_calendar.add("CALSCALE", "GREGORIAN")
 
 #merged_calendar.add_missing_timezones()
 query = recurring_ical_events.of(merged_calendar)
