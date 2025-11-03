@@ -29,6 +29,7 @@ now = datetime.datetime.now(pytz.timezone(trmnl_tz))
 start_date = now.date()
 
 merged_calendar = icalendar.Calendar()
+timezones = []
 for ics_url in trmnl_ics_urls:
     ics_url = ics_url.strip()
     if not ics_url:
@@ -41,12 +42,21 @@ for ics_url in trmnl_ics_urls:
     for name, value in calendar.property_items(recursive=False):
         if name.upper() == "CALSCALE":
             continue
+        if name.upper() == "X-WR-TIMEZONE":
+            timezones.append(value)
+            continue
         merged_calendar.add(name, value)
 
     for component in calendar.walk('VEVENT'):
         merged_calendar.add_component(component)
         
 merged_calendar.add("CALSCALE", "GREGORIAN")
+
+is_same_timezone = all(x == timezones[0] for x in timezones)
+if not is_same_timezone:
+  raise RuntimeError(f"All the calendars must have the same timezone, got {timezones}!")
+elif timezones:
+  merged_calendar.add("X-WR-TIMEZONE", timezones[0])
 
 #merged_calendar.add_missing_timezones()
 query = recurring_ical_events.of(merged_calendar)
